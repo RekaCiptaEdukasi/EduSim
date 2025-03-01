@@ -1,0 +1,748 @@
+<!DOCTYPE html><html lang="id"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Bilangan Habis Dibagi 1-10</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --success-color: #10B981;
+            --error-color: #EF4444;
+            --light-bg: #FFFFFF;
+            --dark-bg: #181818;
+            --light-text: #1F2937;
+            --dark-text: #F3F4F6;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--dark-bg);
+                color: var(--dark-text);
+            }
+            .number-card {
+                background-color: #2D2D2D;
+                color: var(--dark-text);
+            }
+            .result-display {
+                background-color: #2D2D2D;
+                color: var(--dark-text);
+            }
+            .explanation-card {
+                background-color: #2D2D2D;
+                color: var(--dark-text);
+            }
+            .divisibility-rule {
+                background-color: #333333;
+            }
+            .history-item {
+                background-color: #2D2D2D;
+                color: var(--dark-text);
+            }
+        }
+        
+        @media (prefers-color-scheme: light) {
+            body {
+                background-color: var(--light-bg);
+                color: var(--light-text);
+            }
+            .number-card {
+                background-color: #F3F4F6;
+                color: var(--light-text);
+            }
+            .result-display {
+                background-color: #F3F4F6;
+                color: var(--light-text);
+            }
+            .explanation-card {
+                background-color: #F3F4F6;
+                color: var(--light-text);
+            }
+            .divisibility-rule {
+                background-color: #E5E7EB;
+            }
+            .history-item {
+                background-color: #F3F4F6;
+                color: var(--light-text);
+            }
+        }
+        
+        .number-card.habis-dibagi {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .divisibility-rule {
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .divisibility-rule:hover {
+            transform: translateX(5px);
+        }
+        
+        .tabs-header {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .tabs-header::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab-btn {
+            white-space: nowrap;
+        }
+        
+        .history-item {
+            transition: transform 0.2s ease;
+        }
+        
+        .history-item:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-6" style="color: var(--primary-color)">Simulasi Bilangan Habis Dibagi 1-10</h1>
+        
+        <div class="tabs-header mb-4">
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent hover:border-gray-300 focus:outline-none active" data-tab="simulator" style="color: var(--primary-color)">Simulasi</button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent hover:border-gray-300 focus:outline-none" data-tab="rules" style="color: var(--primary-color)">Aturan Pembagian</button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent hover:border-gray-300 focus:outline-none" data-tab="exercise" style="color: var(--primary-color)">Latihan</button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent hover:border-gray-300 focus:outline-none" data-tab="history" style="color: var(--primary-color)">Riwayat</button>
+        </div>
+        
+        <div id="simulator-tab" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <div class="mb-4">
+                        <label for="numberInput" class="block text-sm font-medium mb-2">Masukkan Bilangan:</label>
+                        <div class="flex">
+                            <input type="number" id="numberInput" class="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Contoh: 60" min="1" max="10000">
+                            <button id="checkButton" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center" style="background-color: var(--primary-color)">Periksa</button>
+                        </div>
+                        <p id="errorMsg" class="mt-2 text-sm text-red-600 hidden">Masukkan bilangan positif (1-10000)</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Bilangan acak:</label>
+                        <div class="flex space-x-2">
+                            <button id="randomSmall" class="text-white font-medium rounded-lg text-sm px-3 py-2 text-center" style="background-color: var(--primary-color)">1-100</button>
+                            <button id="randomMedium" class="text-white font-medium rounded-lg text-sm px-3 py-2 text-center" style="background-color: var(--primary-color)">1-1000</button>
+                            <button id="randomBig" class="text-white font-medium rounded-lg text-sm px-3 py-2 text-center" style="background-color: var(--primary-color)">1-10000</button>
+                        </div>
+                    </div>
+
+                    <div class="result-display p-4 rounded-lg mb-4 fade-in">
+                        <h2 class="text-xl font-bold mb-3">Hasil:</h2>
+                        <div id="resultContainer" class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            <!-- Number cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="explanation-card p-4 rounded-lg">
+                    <h2 class="text-xl font-bold mb-3">Penjelasan:</h2>
+                    <div id="explanationContainer" class="space-y-3">
+                        <p class="text-sm">Masukkan bilangan dan klik "Periksa" untuk melihat hasilnya.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-3">Visualisasi Pembagian:</h2>
+                <div id="visualizationContainer" class="p-4 rounded-lg border border-gray-300">
+                    <p class="text-center text-sm">Masukkan bilangan untuk melihat visualisasi</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="rules-tab" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 1</h3>
+                    <p>Semua bilangan bulat habis dibagi 1.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 1, 2, 3, 4, 5, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 2</h3>
+                    <p>Bilangan genap (berakhir dengan 0, 2, 4, 6, atau 8).</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 2, 4, 6, 8, 10, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 3</h3>
+                    <p>Jika jumlah semua digitnya habis dibagi 3.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 3, 6, 9, 12, 15, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 4</h3>
+                    <p>Jika dua digit terakhirnya membentuk bilangan yang habis dibagi 4.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 4, 8, 12, 16, 20, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 5</h3>
+                    <p>Bilangan yang berakhir dengan 0 atau 5.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 5, 10, 15, 20, 25, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 6</h3>
+                    <p>Jika bilangan habis dibagi 2 dan habis dibagi 3.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 6, 12, 18, 24, 30, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 7</h3>
+                    <p>Tidak ada aturan sederhana. Bisa diperiksa dengan pembagian langsung.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 7, 14, 21, 28, 35, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 8</h3>
+                    <p>Jika tiga digit terakhirnya membentuk bilangan yang habis dibagi 8.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 8, 16, 24, 32, 40, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 9</h3>
+                    <p>Jika jumlah semua digitnya habis dibagi 9.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 9, 18, 27, 36, 45, ...</span>
+                    </div>
+                </div>
+                
+                <div class="divisibility-rule p-4 rounded-lg mb-4">
+                    <h3 class="font-bold">Habis dibagi 10</h3>
+                    <p>Bilangan yang berakhir dengan 0.</p>
+                    <div class="mt-2">
+                        <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Contoh: 10, 20, 30, 40, 50, ...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="exercise-tab" class="tab-content hidden">
+            <div class="p-4 rounded-lg mb-6 border border-gray-300">
+                <h2 class="text-xl font-bold mb-3">Latihan Soal</h2>
+                <p id="questionText" class="mb-4 text-lg">Pilih bilangan yang habis dibagi <span id="divider">?</span>:</p>
+                
+                <div id="optionsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <!-- Options will be populated here -->
+                </div>
+                
+                <div id="exerciseResult" class="hidden p-3 rounded-lg mb-3">
+                    <!-- Result will be shown here -->
+                </div>
+                
+                <button id="nextQuestion" class="text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center" style="background-color: var(--primary-color)">Mulai Latihan</button>
+            </div>
+            
+            <div class="p-4 rounded-lg border border-gray-300">
+                <h2 class="text-xl font-bold mb-3">Statistik</h2>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="text-sm font-medium">Jumlah Soal</p>
+                        <p id="totalQuestions" class="text-xl font-bold">0</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Benar</p>
+                        <p id="correctAnswers" class="text-xl font-bold text-green-600">0</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Salah</p>
+                        <p id="wrongAnswers" class="text-xl font-bold text-red-600">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%; background-color: var(--primary-color)"></div>
+                    </div>
+                    <p id="progressText" class="text-xs text-right mt-1">0%</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="history-tab" class="tab-content hidden">
+            <div class="p-4 rounded-lg mb-4 border border-gray-300">
+                <h2 class="text-xl font-bold mb-3">Riwayat Bilangan</h2>
+                <div id="historyContainer" class="space-y-2">
+                    <p class="text-center text-sm">Belum ada riwayat. Periksa beberapa bilangan untuk melihat riwayat.</p>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button id="clearHistory" class="text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center" style="background-color: var(--primary-color)">Hapus Riwayat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const numberInput = document.getElementById('numberInput');
+            const checkButton = document.getElementById('checkButton');
+            const resultContainer = document.getElementById('resultContainer');
+            const explanationContainer = document.getElementById('explanationContainer');
+            const visualizationContainer = document.getElementById('visualizationContainer');
+            const errorMsg = document.getElementById('errorMsg');
+            const randomSmall = document.getElementById('randomSmall');
+            const randomMedium = document.getElementById('randomMedium');
+            const randomBig = document.getElementById('randomBig');
+            
+            // Tab navigation
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            // Exercise elements
+            const questionText = document.getElementById('questionText');
+            const dividerSpan = document.getElementById('divider');
+            const optionsContainer = document.getElementById('optionsContainer');
+            const exerciseResult = document.getElementById('exerciseResult');
+            const nextQuestion = document.getElementById('nextQuestion');
+            const totalQuestions = document.getElementById('totalQuestions');
+            const correctAnswers = document.getElementById('correctAnswers');
+            const wrongAnswers = document.getElementById('wrongAnswers');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            // History elements
+            const historyContainer = document.getElementById('historyContainer');
+            const clearHistory = document.getElementById('clearHistory');
+            
+            // Initialize history in memory (not using localStorage)
+            let history = [];
+            updateHistoryDisplay();
+            
+            // Exercise stats
+            let stats = {
+                total: 0,
+                correct: 0,
+                wrong: 0
+            };
+            
+            // Current exercise state
+            let currentDivider = 0;
+            let currentOptions = [];
+            let correctOption = null;
+            
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.style.borderBottomColor = 'transparent';
+                    });
+                    
+                    // Hide all tab contents
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // Add active class to clicked tab
+                    button.classList.add('active');
+                    button.style.borderBottomColor = 'var(--primary-color)';
+                    
+                    // Show corresponding tab content
+                    const tabId = button.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+                });
+            });
+            
+            // Handle checking numbers
+            checkButton.addEventListener('click', checkNumber);
+            numberInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    checkNumber();
+                }
+                validateInput();
+            });
+            
+            // Random number generators
+            randomSmall.addEventListener('click', () => {
+                numberInput.value = Math.floor(Math.random() * 100) + 1;
+                checkNumber();
+            });
+            
+            randomMedium.addEventListener('click', () => {
+                numberInput.value = Math.floor(Math.random() * 1000) + 1;
+                checkNumber();
+            });
+            
+            randomBig.addEventListener('click', () => {
+                numberInput.value = Math.floor(Math.random() * 10000) + 1;
+                checkNumber();
+            });
+            
+            // Exercise functionality
+            nextQuestion.addEventListener('click', generateQuestion);
+            
+            // History functionality
+            clearHistory.addEventListener('click', () => {
+                history = [];
+                updateHistoryDisplay();
+            });
+            
+            function validateInput() {
+                const value = parseInt(numberInput.value);
+                if (isNaN(value) || value < 1 || value > 10000) {
+                    errorMsg.classList.remove('hidden');
+                    checkButton.disabled = true;
+                } else {
+                    errorMsg.classList.add('hidden');
+                    checkButton.disabled = false;
+                }
+            }
+            
+            function checkNumber() {
+                validateInput();
+                if (checkButton.disabled) return;
+                
+                const number = parseInt(numberInput.value);
+                resultContainer.innerHTML = '<div class="loading-spinner"></div>';
+                explanationContainer.innerHTML = '<div class="loading-spinner"></div>';
+                visualizationContainer.innerHTML = '<div class="loading-spinner"></div>';
+                
+                // Simulate loading for better UX
+                setTimeout(() => {
+                    displayResults(number);
+                    createExplanation(number);
+                    createVisualization(number);
+                    
+                    // Add to history (in-memory only, no localStorage)
+                    if (!history.includes(number)) {
+                        history.unshift(number);
+                        if (history.length > 10) {
+                            history.pop();
+                        }
+                        updateHistoryDisplay();
+                    }
+                }, 500);
+            }
+            
+            function displayResults(number) {
+                resultContainer.innerHTML = '';
+                
+                for (let i = 1; i <= 10; i++) {
+                    const isDiv = number % i === 0;
+                    const card = document.createElement('div');
+                    card.className = `number-card p-2 rounded-lg text-center ${isDiv ? 'habis-dibagi' : ''}`;
+                    card.innerHTML = `
+                        <div class="text-sm font-semibold">${i}</div>
+                        <div class="text-xs">${isDiv ? '✓' : '✗'}</div>
+                    `;
+                    resultContainer.appendChild(card);
+                }
+            }
+            
+            function createExplanation(number) {
+                explanationContainer.innerHTML = '';
+                
+                const title = document.createElement('h3');
+                title.className = 'font-bold text-lg';
+                title.textContent = `Bilangan ${number}`;
+                explanationContainer.appendChild(title);
+                
+                let factorsArray = [];
+                
+                for (let i = 1; i <= 10; i++) {
+                    const isDiv = number % i === 0;
+                    if (isDiv) {
+                        factorsArray.push(i);
+                        
+                        const explanation = document.createElement('div');
+                        explanation.className = 'mb-2 fade-in';
+                        
+                        const result = `${number} ÷ ${i} = ${number / i}`;
+                        
+                        explanation.innerHTML = `
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 flex items-center justify-center rounded-full mr-2 text-white" style="background-color: var(--success-color)">✓</div>
+                                <div>
+                                    <p class="font-medium">Habis dibagi ${i}</p>
+                                    <p class="text-sm">${result}</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        explanationContainer.appendChild(explanation);
+                    }
+                }
+                
+                // Add a summary
+                const summary = document.createElement('div');
+                summary.className = 'mt-4 p-3 rounded-lg bg-blue-100 dark:bg-blue-900';
+                summary.innerHTML = `
+                    <p class="font-medium">Kesimpulan:</p>
+                    <p>Bilangan ${number} habis dibagi: ${factorsArray.join(', ')}</p>
+                `;
+                explanationContainer.appendChild(summary);
+            }
+            
+            function createVisualization(number) {
+                visualizationContainer.innerHTML = '';
+                
+                // Create division visualization
+                for (let i = 1; i <= 10; i++) {
+                    if (number % i === 0) {
+                        // Create visualization for divisible numbers
+                        const result = number / i;
+                        const container = document.createElement('div');
+                        container.className = 'mb-3 pb-3 border-b border-gray-200 dark:border-gray-700';
+                        
+                        const title = document.createElement('h3');
+                        title.className = 'font-medium mb-2';
+                        title.textContent = `${number} ÷ ${i} = ${result}`;
+                        container.appendChild(title);
+                        
+                        // Create visual representation (grouped blocks)
+                        const visualBlock = document.createElement('div');
+                        visualBlock.className = 'flex flex-wrap gap-1';
+                        
+                        // Only show up to 100 groups for performance
+                        const groupsToShow = Math.min(result, 100);
+                        
+                        for (let j = 0; j < groupsToShow; j++) {
+                            const group = document.createElement('div');
+                            group.className = 'relative';
+                            
+                            // Create a group container
+                            const groupContainer = document.createElement('div');
+                            groupContainer.className = 'flex flex-wrap w-10 h-10 border border-blue-300 dark:border-blue-700 rounded overflow-hidden';
+                            
+                            // Fill the group with i blocks
+                            for (let k = 0; k < i; k++) {
+                                const block = document.createElement('div');
+                                block.className = 'bg-blue-500 dark:bg-blue-600';
+                                block.style.width = `${100 / Math.ceil(Math.sqrt(i))}%`;
+                                block.style.height = `${100 / Math.ceil(Math.sqrt(i))}%`;
+                                groupContainer.appendChild(block);
+                            }
+                            
+                            group.appendChild(groupContainer);
+                            
+                            // Only show labels for specific groups
+                            if (j === 0 || j === groupsToShow - 1 || j % 10 === 0) {
+                                const label = document.createElement('div');
+                                label.className = 'absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs';
+                                label.textContent = j + 1;
+                                group.appendChild(label);
+                            }
+                            
+                            visualBlock.appendChild(group);
+                        }
+                        
+                        // If too many groups, show ellipsis
+                        if (result > 100) {
+                            const ellipsis = document.createElement('div');
+                            ellipsis.className = 'self-center text-xl';
+                            ellipsis.textContent = '...';
+                            visualBlock.appendChild(ellipsis);
+                        }
+                        
+                        container.appendChild(visualBlock);
+                        visualizationContainer.appendChild(container);
+                    }
+                }
+            }
+            
+            function generateQuestion() {
+                // Reset UI
+                exerciseResult.classList.add('hidden');
+                nextQuestion.textContent = 'Soal Berikutnya';
+                
+                // Select a random divisor from 2-10 (1 is too obvious)
+                currentDivider = Math.floor(Math.random() * 9) + 2;
+                dividerSpan.textContent = currentDivider;
+                
+                // Generate one correct option and three incorrect ones
+                optionsContainer.innerHTML = '';
+                
+                // Generate correct option (number divisible by currentDivider)
+                const correctBase = Math.floor(Math.random() * 50) + 1;
+                correctOption = correctBase * currentDivider;
+                
+                // Generate incorrect options that aren't divisible by the currentDivider
+                let incorrectOptions = [];
+                while (incorrectOptions.length < 3) {
+                    const candidate = Math.floor(Math.random() * 100) + 1;
+                    if (candidate % currentDivider !== 0 && !incorrectOptions.includes(candidate) && candidate !== correctOption) {
+                        incorrectOptions.push(candidate);
+                    }
+                }
+                
+                // Combine options and shuffle
+                currentOptions = [correctOption, ...incorrectOptions];
+                shuffleArray(currentOptions);
+                
+                // Create option buttons
+                currentOptions.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700';
+                    button.textContent = option;
+                    button.dataset.value = option;
+                    button.addEventListener('click', checkAnswer);
+                    optionsContainer.appendChild(button);
+                });
+            }
+            
+            function checkAnswer(event) {
+                const selectedOption = parseInt(event.target.dataset.value);
+                const isCorrect = selectedOption % currentDivider === 0;
+                
+                // Update stats
+                stats.total++;
+                if (isCorrect) {
+                    stats.correct++;
+                } else {
+                    stats.wrong++;
+                }
+                
+                // Update UI
+                updateStats();
+                
+                // Disable all option buttons
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.disabled = true;
+                    
+                    // Highlight correct/incorrect answers
+                    const btnValue = parseInt(btn.dataset.value);
+                    if (btnValue % currentDivider === 0) {
+                        btn.classList.add('bg-green-100', 'dark:bg-green-900', 'border-green-500');
+                    } else if (btnValue === selectedOption && !isCorrect) {
+                        btn.classList.add('bg-red-100', 'dark:bg-red-900', 'border-red-500');
+                    }
+                });
+                
+                // Show result message
+                exerciseResult.classList.remove('hidden');
+                exerciseResult.className = isCorrect ? 
+                    'p-3 bg-green-100 text-green-800 rounded-lg dark:bg-green-900 dark:text-green-300' : 
+                    'p-3 bg-red-100 text-red-800 rounded-lg dark:bg-red-900 dark:text-red-300';
+                
+                if (isCorrect) {
+                    exerciseResult.innerHTML = `
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div>Benar! ${selectedOption} habis dibagi ${currentDivider} (${selectedOption} ÷ ${currentDivider} = ${selectedOption / currentDivider})</div>
+                        </div>
+                    `;
+                } else {
+                    exerciseResult.innerHTML = `
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div>Salah! ${selectedOption} tidak habis dibagi ${currentDivider} (${selectedOption} ÷ ${currentDivider} = ${(selectedOption / currentDivider).toFixed(2)})</div>
+                        </div>
+                        <div class="mt-1 ml-7">Jawaban benar adalah: ${currentOptions.find(opt => opt % currentDivider === 0)}</div>
+                    `;
+                }
+            }
+            
+            function updateStats() {
+                totalQuestions.textContent = stats.total;
+                correctAnswers.textContent = stats.correct;
+                wrongAnswers.textContent = stats.wrong;
+                
+                const percentage = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                progressBar.style.width = `${percentage}%`;
+                progressText.textContent = `${percentage}%`;
+            }
+            
+            function updateHistoryDisplay() {
+                if (history.length === 0) {
+                    historyContainer.innerHTML = '<p class="text-center text-sm">Belum ada riwayat. Periksa beberapa bilangan untuk melihat riwayat.</p>';
+                    return;
+                }
+                
+                historyContainer.innerHTML = '';
+                history.forEach(number => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item p-3 rounded-lg mb-2 cursor-pointer';
+                    
+                    // Get divisors for this number
+                    const divisors = [];
+                    for (let i = 1; i <= 10; i++) {
+                        if (number % i === 0) {
+                            divisors.push(i);
+                        }
+                    }
+                    
+                    item.innerHTML = `
+                        <div class="font-medium">Bilangan ${number}</div>
+                        <div class="text-sm">Habis dibagi: ${divisors.join(', ')}</div>
+                    `;
+                    
+                    item.addEventListener('click', () => {
+                        numberInput.value = number;
+                        checkNumber();
+                        
+                        // Switch to simulator tab
+                        document.querySelector('[data-tab="simulator"]').click();
+                    });
+                    
+                    historyContainer.appendChild(item);
+                });
+            }
+            
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+        });
+    </script>
+
+
+</body></html>
